@@ -1,51 +1,68 @@
-import "./App.css";
-import React, { useEffect, useState } from "react";
-import Recipe from "./Recipe";
+import React, { Component } from "react";
+import Header from "./components/Header";
+import Form from "./components/Form";
+import Weather from "./components/Weather";
 
-function App() {
-  let [recipes, setRecipes] = useState([]);
-  let [search, setSearch] = useState("");
-  let [query, setQuery] = useState("chicken");
+const API_KEY = "107afa8656549d2ea1960d06be351f87";
 
-  const APP_ID = "6f584901";
-  const APP_KEY = "22ae3238c775e83bd9c2fc72fe4caad9	";
-  const getRecipes = async () => {
+export default class App extends Component {
+  state = {
+    country: "",
+    city: "",
+    temperature: undefined,
+    error: undefined,
+    load: false
+  };
+
+  getWeather = async e => {
+    // e.preventDefault();
+    // const country = e.target.elements.country.value;
+    // const city = e.target.elements.city.value;
+    this.setState({load: true})
+    let {city,country} = this.state
     try {
-      const response = await fetch(
-        `https://api.edamam.com/search?q=${query}&app_id=${APP_ID}&app_key=${APP_KEY}`
+      var response = await fetch(
+        `http://api.openweathermap.org/data/2.5/weather?q=${city},${country}&appid=${API_KEY}&units=metric`
       );
-      const data = await response.json();
-      setRecipes(data.hits);
-      console.log(data.hits);
-    } catch (err) {
-      console.log(err.data + " hop");
+      var data = await response.json();
+      var { temp, humidity, pressure } = data.main;
+       this.setState({
+        country: data.sys.country,
+        city: data.name,
+        temperature: temp
+      });
+      console.log(data);
+    } catch (error) {
+      this.setState({
+        error: `required: ${error}`
+      });
     }
   };
-  useEffect(() => {
-    getRecipes();
-  }, [query]);
-  function getSearch(e) {
+
+  handleOnSubmit = (e)=>{
     e.preventDefault();
-    setQuery(search);
-    setSearch("");
+    this.getWeather()
   }
-  function updateSearch(e) {
-    setSearch(e.target.value);
+
+  handleOnChange = e => {
+    let { name, value } = e.target;
+    this.setState({
+      [name]: value
+    });
+  };
+
+  render() {
+    return (
+      <React.Fragment>
+        <Header />
+        <Form
+          state={this.state}
+          getWeather={this.getWeather}
+          handleOnChange={this.handleOnChange}
+          handleOnSubmit={this.handleOnSubmit}
+        />
+        <Weather data={this.state} />
+      </React.Fragment>
+    );
   }
-  return (
-    <div className="App">
-      <form onSubmit={getSearch}>
-        <input type="text" value={search} onChange={updateSearch} />
-        <button type="submit">search</button>
-      </form>
-      {recipes.map((recipe, index) => (
-        <Recipe key={index} recipe={recipe.recipe} />
-      ))}
-    </div>
-  );
 }
-
-export default App;
-
-
-// johnN7 51658848  mrgreenpresson@mail.ru
