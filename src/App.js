@@ -1,52 +1,90 @@
-import React, { useState, useRef, useEffect } from 'react';
-import TodoList from './TodoList'
-import uuidv4 from 'uuid/v4'
+// import React, { Component } from "react";
+// import SearchBar from "./components/SearchBar";
+// import VideoDetail from "./components/VideoDetail";
+// import VideoList from "./components/VideoList";
+// import youtube from "./api/youtube";
+// import "./App.css";
 
-const LOCAL_STORAGE_KEY = 'todoApp.todos'
+// export default class App extends Component {
+//   state = {
+//     videos: [],
+//     selectedVideo: null
+//   };
 
-function App() {
-  const [todos, setTodos] = useState([])
-  const todoNameRef = useRef()
+//   handleSubmit = async search => {
+//     let {data:{items:videos}} = await youtube.get("search", {
+//       params: {
+//         part: "snippet",
+//         maxResults: 5,
+//         key: "AIzaSyAZeANtjUoKNrQNZV_mxko3lmQn0pj7Kkc",
+//         q: search
+//       }
+//     });
+//     this.setState({
+//       videos: videos,
+//       selectedVideo: videos[0]
+//     });
+//     console.log(videos);
+//   };
 
-  useEffect(() => {
-    const storedTodos = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY))
-    if (storedTodos) setTodos(storedTodos)
-  }, [])
+//   handleVideoSelect = video => {
+//     this.setState({
+//       selectedVideo: video
+//     });
+//   };
 
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos))
-  }, [todos])
+//   render() {
+//     return (
+//       <>
+//         <SearchBar handleSubmit={this.handleSubmit} />
+//         <VideoDetail video={this.state.selectedVideo} />
+//         <VideoList
+//           videos={this.state.videos}
+//           onVideoSelect={this.handleVideoSelect}
+//         />
+//       </>
+//     );
+//   }
+// }
 
-  function toggleTodo(id) {
-    const newTodos = [...todos]
-    const todo = newTodos.find(todo => todo.id === id)
-    todo.complete = !todo.complete
-    setTodos(newTodos)
-  }
+// https://developers.google.com/youtube/v3/getting-started      //for setting options and finding key
 
-  function handleAddTodo(e) {
-    const name = todoNameRef.current.value
-    if (name === '') return
-    setTodos(prevTodos => {
-      return [...prevTodos, { id: uuidv4(), name: name, complete: false}]
-    })
-    todoNameRef.current.value = null
-  }
+// modified solution
+import React, { useState } from "react";
+import { SearchBar, VideoDetail, VideoList } from "./components";
+import youtube from "./api/youtube";
+import "./App.css";
 
-  function handleClearTodos() {
-    const newTodos = todos.filter(todo => !todo.complete)
-    setTodos(newTodos)
-  }
+export default function App() {
+  let [videos, setVideos] = useState([]);
+  let [selectedVideo, setSelectedVideo] = useState(null);
+
+  let handleSubmit = async search => {
+    try {
+      let {
+        data: { items: videos }
+      } = await youtube.get("search", {
+        timeout: 1000,
+        params: {
+          part: "snippet",
+          maxResults: 5,
+          key: "AIzaSyAZeANtjUoKNrQNZV_mxko3lmQn0pj7Kkc",
+          q: search
+        }
+      });
+      setVideos(videos);
+      setSelectedVideo(videos[0]);
+      console.log(videos);
+    } catch (err) {
+      console.log(err, "hey check the catch of asyn");
+    }
+  };
 
   return (
     <>
-      <TodoList todos={todos} toggleTodo={toggleTodo} />
-      <input ref={todoNameRef} type="text" />
-      <button onClick={handleAddTodo}>Add Todo</button>
-      <button onClick={handleClearTodos}>Clear Complete</button>
-      <div>{todos.filter(todo => !todo.complete).length} left to do</div>
+      <SearchBar handleSubmit={handleSubmit} />
+      <VideoDetail video={selectedVideo} />
+      <VideoList videos={videos} onVideoSelect={setSelectedVideo} />
     </>
-  )
+  );
 }
-
-export default App;
